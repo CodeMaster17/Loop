@@ -5,9 +5,25 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
+    "plugins": [
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Allow Rasoi to use the microphone so you can change meals by voice.",
+          "speechRecognitionPermission": "Allow Rasoi to recognise your speech to update the plan.",
+          "androidSpeechServicePackages": [
+            "com.google.android.googlequicksearchbox"
+          ]
+        }
+      ]
+    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "Allow Rasoi to recognise your speech to update the plan.",
+        "NSMicrophoneUsageDescription": "Allow Rasoi to use the microphone so you can change meals by voice."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -15,7 +31,11 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.anonymous.rasoiplanner"
     },
     "web": {
       "favicon": "./assets/favicon.png"
