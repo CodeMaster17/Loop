@@ -4,6 +4,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-cont
 import { ProteinMeter } from './src/components/ui';
 import { prettyDate } from './src/lib/date';
 import { dayProtein } from './src/lib/plan';
+import { OnboardingFlow } from './src/onboarding/OnboardingFlow';
 import { DiscoverScreen } from './src/screens/DiscoverScreen';
 import { GroceryScreen } from './src/screens/GroceryScreen';
 import { TodayScreen } from './src/screens/TodayScreen';
@@ -26,10 +27,16 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StoreProvider fallback={<Loading />}>
-        <Root />
+        <Gate />
       </StoreProvider>
     </SafeAreaProvider>
   );
+}
+
+/** Show onboarding until it's completed, then the main app. */
+function Gate() {
+  const { store } = useStore();
+  return store.onboarded ? <Root /> : <OnboardingFlow />;
 }
 
 function Loading() {

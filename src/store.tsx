@@ -6,7 +6,8 @@ import { applyCommand } from './lib/commands';
 import { addDays, dkey } from './lib/date';
 import { cancelReminder, scheduleDailyReminder } from './lib/notifications';
 import { pick, recentNames, seedDay } from './lib/plan';
-import type { DayPlan, Lang, Recipe, Settings, Slot, Store } from './types';
+import { defaultPrefs, seedDayFromPrefs } from './lib/prefs';
+import type { DayPlan, Lang, Prefs, Recipe, Settings, Slot, Store } from './types';
 
 const KEY = 'rasoiPlanner.v1';
 
@@ -17,6 +18,8 @@ export function freshStore(): Store {
     done: {},
     cur: dkey(new Date()),
     seeded: true,
+    onboarded: false,
+    prefs: defaultPrefs(),
   };
   const today = new Date();
   for (let i = 0; i < 7; i++) store.plan[dkey(addDays(today, i))] = seedDay('both', recentNames(store.plan));
@@ -35,6 +38,8 @@ export interface StoreApi {
   setLang: (lang: Lang) => void;
   updateSettings: (patch: Partial<Settings>) => void;
   setReminder: (on: boolean) => Promise<void>;
+  /** Finish onboarding: save prefs, flip the gate, and seed the week from chosen dishes. */
+  completeOnboarding: (prefs: Prefs) => void;
 }
 
 const StoreContext = createContext<StoreApi | null>(null);
@@ -57,6 +62,8 @@ export function StoreProvider({ children, fallback }: { children: React.ReactNod
           const s = JSON.parse(raw) as Store;
           if (s && s.plan) {
             if (!s.done) s.done = {};
+            if (typeof s.onboarded !== 'boolean') s.onboarded = false;
+            if (!s.prefs) s.prefs = defaultPrefs();
             setStore(s);
             return;
           }
@@ -133,6 +140,15 @@ export function StoreProvider({ children, fallback }: { children: React.ReactNod
       commit((n) => { n.settings.reminder = on; });
       if (on) await scheduleDailyReminder(); else await cancelReminder();
     },
+    completeOnboarding: (prefs) => commit((n) => {
+      n.prefs = prefs;
+      n.onboarded = true;
+      const today = new Date();
+      n.plan = {};
+      for (let i = 0; i < 7; i++) n.plan[dkey(addDays(today, i))] = seedDayFromPrefs(prefs, n.settings.diet);
+      n.cur = dkey(today);
+      n.seeded = true;
+    }),
   };
 
   return <StoreContext.Provider value={api}>{children}</StoreContext.Provider>;

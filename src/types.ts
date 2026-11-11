@@ -1,9 +1,12 @@
 // Shared domain types for Rasoi.
 
 export type Slot = 'breakfast' | 'lunch' | 'dinner';
+/** Onboarding meal slots — includes evening snacks (the planner uses the 3 in Slot). */
+export type OnbSlot = 'breakfast' | 'lunch' | 'snacks' | 'dinner';
 export type Diet = 'veg' | 'both' | 'nonveg';
 export type Lang = 'english' | 'hinglish';
 export type Tab = 'today' | 'week' | 'grocery' | 'discover';
+export type AuthMode = 'guest' | 'google';
 
 /** A meal as it appears in a day's plan. */
 export interface Meal {
@@ -45,6 +48,19 @@ export interface Settings {
   reminder: boolean;
 }
 
+/** Preferences captured during onboarding. */
+export interface Prefs {
+  authMode: AuthMode;
+  /** chosen cuisine ids */
+  cuisines: string[];
+  /** chosen region ids */
+  regions: string[];
+  /** selected dish names per meal slot */
+  menu: Record<OnbSlot, string[]>;
+  /** kitchen item name -> already present */
+  pantry: Record<string, boolean>;
+}
+
 /** The whole persisted app state. */
 export interface Store {
   settings: Settings;
@@ -56,4 +72,8 @@ export interface Store {
   cur: string;
   /** true until the user makes their first real edit (shows the "example" tag) */
   seeded: boolean;
+  /** false until the onboarding flow is finished */
+  onboarded: boolean;
+  /** onboarding choices */
+  prefs: Prefs;
 }
