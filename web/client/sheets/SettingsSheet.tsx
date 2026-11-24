@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { palette as c } from '../../shared/src/design/palette';
 import { useStore } from '../../shared/src/store';
 import type { Diet } from '../../shared/src/types';
@@ -29,8 +29,15 @@ function SettingsForm({ onClose }: { onClose: () => void }) {
   const field: React.CSSProperties = { width: '100%', border: `1px solid ${c.line}`, background: c.surface2, color: c.ink, borderRadius: 11, padding: '12px 13px', fontSize: 15 };
   const lbl: React.CSSProperties = { display: 'block', color: c.inkSoft, fontSize: 12, fontWeight: 600, marginBottom: 6, marginTop: 14 };
   const pick = (on: boolean): React.CSSProperties => ({ flex: 1, padding: '10px 0', borderRadius: 8, border: `1px solid ${on ? 'transparent' : c.line}`, background: on ? c.brand : c.surface2, textAlign: 'center', color: on ? c.white : c.inkSoft, fontWeight: 600, fontSize: 13 });
-  // Web push only reaches iPhones when Rasoi is on the Home Screen (iOS 16.4+).
-  const pushHint = !pushSupported() || !isInstalled() ? 'On iPhone, add Rasoi to your Home Screen first (Share → Add to Home Screen).' : null;
+  // Web push only reaches iPhones when Rasoi is on the Home Screen (iOS 16.4+), and only
+  // when the server has reminders set up.
+  const [serverReady, setServerReady] = useState<boolean | null>(null);
+  useEffect(() => {
+    fetch('/api/push/key').then((r) => setServerReady(r.ok)).catch(() => setServerReady(null));
+  }, []);
+  const pushHint = serverReady === false
+    ? "Reminders aren't switched on for this site yet."
+    : !pushSupported() || !isInstalled() ? 'On iPhone, add Rasoi to your Home Screen first (Share → Add to Home Screen).' : null;
 
   return (
     <>
