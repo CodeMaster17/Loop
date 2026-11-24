@@ -1,7 +1,9 @@
 // Helpers that turn onboarding preferences into planner data.
 import { DISHES } from '../data/cuisines';
 import type { DayPlan, Diet, Meal, Prefs, Slot } from '../types';
+import { isFishDish } from '../domain/ingredients';
 import { pick } from './plan';
+import { isInRotation } from './rotation';
 
 export function defaultPrefs(): Prefs {
   return {
@@ -27,7 +29,7 @@ function randomFrom<T>(arr: T[]): T | undefined {
 /** Seed a day from the user's chosen dishes, falling back to the library per slot. */
 export function seedDayFromPrefs(prefs: Prefs, diet: Diet = 'both'): DayPlan {
   const forSlot = (slot: Slot): Meal => {
-    const chosen = randomFrom(prefs.menu[slot]);
+    const chosen = randomFrom(prefs.menu[slot].filter((n) => !isFishDish(n) && isInRotation(n)));
     return chosen ? mealFromDishName(chosen) : pick(slot, diet, []);
   };
   return { breakfast: forSlot('breakfast'), lunch: forSlot('lunch'), dinner: forSlot('dinner') };

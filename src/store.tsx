@@ -2,11 +2,13 @@
 // exposed through React context so any screen/sheet can reach it.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { getDb } from './db/open';
 import { applyCommand } from './lib/commands';
 import { addDays, dkey } from './lib/date';
 import { cancelReminder, scheduleDailyReminder } from './lib/notifications';
 import { pick, recentNames, seedDay } from './lib/plan';
 import { defaultPrefs, seedDayFromPrefs } from './lib/prefs';
+import { PLAN_VERSION, upgradePlan } from './lib/replan';
 import type { DayPlan, Lang, Prefs, Recipe, Settings, Slot, Store } from './types';
 
 const KEY = 'rasoiPlanner.v1';
@@ -19,6 +21,7 @@ export function freshStore(): Store {
     cur: dkey(new Date()),
     seeded: true,
     onboarded: false,
+    planVersion: PLAN_VERSION,
     prefs: defaultPrefs(),
   };
   const today = new Date();
@@ -30,6 +33,8 @@ export interface StoreApi {
   store: Store;
   newPlan: () => void;
   swap: (slot: Slot) => void;
+  /** Swap one meal on a given day (date key) for another dish. */
+  swapAt: (key: string, slot: Slot) => void;
   shiftDay: (delta: number) => void;
   planWeek: () => void;
   addRecipeToToday: (r: Recipe) => void;
@@ -56,6 +61,8 @@ export function StoreProvider({ children, fallback }: { children: React.ReactNod
   // Load persisted state (or seed a fresh week on first run).
   useEffect(() => {
     (async () => {
+      // Load the menu card's rotation (ADD / ADDED) first, so any re-plan below respects it.
+      await getDb().catch(() => {});
       try {
         const raw = await AsyncStorage.getItem(KEY);
         if (raw) {
@@ -64,6 +71,7 @@ export function StoreProvider({ children, fallback }: { children: React.ReactNod
             if (!s.done) s.done = {};
             if (typeof s.onboarded !== 'boolean') s.onboarded = false;
             if (!s.prefs) s.prefs = defaultPrefs();
+            if (upgradePlan(s)) AsyncStorage.setItem(KEY, JSON.stringify(s)).catch(() => {});
             setStore(s);
             return;
           }
@@ -94,6 +102,8 @@ export function StoreProvider({ children, fallback }: { children: React.ReactNod
     let missing = false;
     for (let i = 0; i < 7; i++) if (!store.plan[dkey(addDays(today, i))]) { missing = true; break; }
     if (missing) {
+      // Legacy AsyncStorage store — replaced by the SQLite rotation in Phase 1.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       commit((n) => {
         for (let i = 0; i < 7; i++) {
           const k = dkey(addDays(today, i));
@@ -111,6 +121,12 @@ export function StoreProvider({ children, fallback }: { children: React.ReactNod
     swap: (slot) => commit((n) => {
       const cur = n.plan[n.cur][slot];
       n.plan[n.cur][slot] = pick(slot, n.settings.diet, [cur.name]);
+      n.seeded = false;
+    }),
+    swapAt: (key, slot) => commit((n) => {
+      const day = n.plan[key];
+      if (!day) return;
+      day[slot] = pick(slot, n.settings.diet, [day[slot].name]);
       n.seeded = false;
     }),
     shiftDay: (delta) => commit((n) => {

@@ -5,7 +5,7 @@ export type Slot = 'breakfast' | 'lunch' | 'dinner';
 export type OnbSlot = 'breakfast' | 'lunch' | 'snacks' | 'dinner';
 export type Diet = 'veg' | 'both' | 'nonveg';
 export type Lang = 'english' | 'hinglish';
-export type Tab = 'today' | 'week' | 'grocery' | 'discover';
+export type Tab = 'plan' | 'menu' | 'grocery';
 export type AuthMode = 'guest' | 'google';
 
 /** A meal as it appears in a day's plan. */
@@ -46,6 +46,8 @@ export interface Settings {
   protein: number;
   lang: Lang;
   reminder: boolean;
+  /** Emojis in cook messages (default on). */
+  emoji?: boolean;
 }
 
 /** Preferences captured during onboarding. */
@@ -74,6 +76,8 @@ export interface Store {
   seeded: boolean;
   /** false until the onboarding flow is finished */
   onboarded: boolean;
+  /** Version of the saved plan format/rules; see lib/replan.ts. Missing = 1. */
+  planVersion?: number;
   /** onboarding choices */
   prefs: Prefs;
 }

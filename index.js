@@ -1,3 +1,5 @@
+// Must run before any Tamagui import: lets Tamagui's Sheet use native gestures.
+import '@tamagui/native/setup-gesture-handler';
 import { registerRootComponent } from 'expo';
 
 import App from './App';

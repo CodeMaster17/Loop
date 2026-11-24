@@ -1,29 +1,33 @@
 {
   "expo": {
-    "name": "rasoi-planner",
-    "slug": "rasoi-planner",
+    "name": "Rasoi",
+    "slug": "rasoi",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "plugins": [
+      "expo-sqlite",
+      "expo-font",
+      "./plugins/withoutPushEntitlement",
       [
-        "expo-speech-recognition",
+        "expo-build-properties",
         {
-          "microphonePermission": "Allow Rasoi to use the microphone so you can change meals by voice.",
-          "speechRecognitionPermission": "Allow Rasoi to recognise your speech to update the plan.",
-          "androidSpeechServicePackages": [
-            "com.google.android.googlequicksearchbox"
-          ]
+          "ios": {
+            "ccacheEnabled": true
+          }
         }
       ]
     ],
     "ios": {
-      "supportsTablet": true,
+      "supportsTablet": false,
+      "bundleIdentifier": "com.harshityadav.rasoi",
       "infoPlist": {
-        "NSSpeechRecognitionUsageDescription": "Allow Rasoi to recognise your speech to update the plan.",
-        "NSMicrophoneUsageDescription": "Allow Rasoi to use the microphone so you can change meals by voice."
-      }
+        "LSApplicationQueriesSchemes": [
+          "whatsapp"
+        ]
+      },
+      "appleTeamId": "ALK5WAZQ6C"
     },
     "android": {
       "adaptiveIcon": {
@@ -32,10 +36,11 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "permissions": [
+      "permissions": [],
+      "package": "com.harshityadav.rasoi",
+      "blockedPermissions": [
         "android.permission.RECORD_AUDIO"
-      ],
-      "package": "com.anonymous.rasoiplanner"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"

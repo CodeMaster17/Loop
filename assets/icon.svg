@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Rasoi app icon: a white handi (cooking pot) with saffron steam, on black.
+       iOS rounds the corners itself, so the square is full-bleed. -->
+  <rect width="1024" height="1024" fill="#121212"/>
+
+  <!-- steam -->
+  <g fill="none" stroke="#E8891C" stroke-width="38" stroke-linecap="round">
+    <path d="M396 410 C362 370 430 334 396 286"/>
+    <path d="M512 396 C478 348 546 304 512 246"/>
+    <path d="M628 410 C594 370 662 334 628 286"/>
+  </g>
+
+  <!-- handles -->
+  <rect x="188" y="532" width="112" height="44" rx="22" fill="#FFFFFF"/>
+  <rect x="724" y="532" width="112" height="44" rx="22" fill="#FFFFFF"/>
+
+  <!-- pot body -->
+  <path d="M276 500 H748 C748 690 642 806 512 806 C382 806 276 690 276 500 Z" fill="#FFFFFF"/>
+
+  <!-- rim -->
+  <rect x="236" y="462" width="552" height="64" rx="32" fill="#FFFFFF"/>
+
+  <!-- saffron band on the pot -->
+  <path d="M300 600 H724 C716 628 704 652 690 672 H334 C320 652 308 628 300 600 Z" fill="#E8891C"/>
+</svg>

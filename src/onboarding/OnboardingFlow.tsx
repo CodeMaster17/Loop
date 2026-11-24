@@ -1,13 +1,13 @@
 // Step-driven onboarding: welcome → cuisine → region → menu → review → kitchen.
 // No navigation library — one controller holds the draft and renders each step.
 import React, { useState } from 'react';
-import { ScrollView, useColorScheme, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { KITCHEN } from '../data/cuisines';
 import { defaultPrefs } from '../lib/prefs';
 import { useStore } from '../store';
-import { getColors } from '../theme';
-import type { AuthMode, OnbSlot, Prefs } from '../types';
+import { useColors } from '../theme';
+import type { OnbSlot, Prefs } from '../types';
 import { CuisineStep, KitchenStep, MenuStep, RegionStep, ReviewStep, WelcomeStep } from './steps';
 import { Footer, StepHeader } from './ui';
 
@@ -28,11 +28,10 @@ function initPantry(): Record<string, boolean> {
 }
 
 export function OnboardingFlow() {
-  const c = getColors(useColorScheme());
+  const c = useColors();
   const { completeOnboarding } = useStore();
 
   const [step, setStep] = useState(0);
-  const [authMode, setAuthMode] = useState<AuthMode>('guest');
   const [cuisines, setCuisines] = useState<string[]>([]);
   const [regions, setRegions] = useState<string[]>([]);
   const [menu, setMenu] = useState<Prefs['menu']>(defaultPrefs().menu);
@@ -44,7 +43,7 @@ export function OnboardingFlow() {
 
   const next = () => setStep((s) => s + 1);
   const back = () => setStep((s) => Math.max(0, s - 1));
-  const finish = () => completeOnboarding({ authMode, cuisines, regions, menu, pantry });
+  const finish = () => completeOnboarding({ authMode: 'guest', cuisines, regions, menu, pantry });
 
   const meta = STEP_META[step];
 
@@ -52,10 +51,7 @@ export function OnboardingFlow() {
     <SafeAreaView style={{ flex: 1, backgroundColor: c.bg }} edges={['top', 'bottom']}>
       <View style={{ flex: 1, paddingHorizontal: 20, paddingTop: 6 }}>
         {step === 0 ? (
-          <WelcomeStep
-            onGuest={() => { setAuthMode('guest'); setStep(1); }}
-            onGoogle={() => { setAuthMode('google'); setStep(1); }}
-          />
+          <WelcomeStep onStart={() => setStep(1)} />
         ) : (
           <>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 16 }}>

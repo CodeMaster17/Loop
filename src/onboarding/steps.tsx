@@ -1,41 +1,31 @@
 // The individual onboarding step bodies (the flow controller owns header + footer).
 import React, { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, View } from 'react-native';
+import { Text } from '../components/Text';
 import { CUISINES, dishesFor, KITCHEN, MEAL_TABS, REGIONS } from '../data/cuisines';
 import { useColors } from '../theme';
 import type { OnbSlot, Prefs } from '../types';
 import { OptionCard, SelectPill } from './ui';
 
 /* ---------------- Welcome ---------------- */
-export function WelcomeStep({ onGuest, onGoogle }: { onGuest: () => void; onGoogle: () => void }) {
+export function WelcomeStep({ onStart }: { onStart: () => void }) {
   const c = useColors();
   return (
     <View style={{ flex: 1, justifyContent: 'center', paddingBottom: 30 }}>
       <View style={{ alignItems: 'center', marginBottom: 40 }}>
-        <View style={{ width: 88, height: 88, borderRadius: 26, backgroundColor: c.green, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ width: 88, height: 88, borderRadius: 26, backgroundColor: c.saffron, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ fontSize: 46 }}>🍛</Text>
         </View>
         <Text style={{ color: c.ink, fontSize: 30, fontWeight: '800', letterSpacing: -0.5, marginTop: 20 }}>Rasoi</Text>
         <Text style={{ color: c.inkSoft, fontSize: 15, marginTop: 8, textAlign: 'center', lineHeight: 21 }}>
-          Plan the day's meals by voice{'\n'}and send them straight to your cook.
+          {"Your week's meals, planned for you\nand sent straight to your cook."}
         </Text>
       </View>
 
-      <Pressable onPress={onGuest} style={{ backgroundColor: c.green, paddingVertical: 16, borderRadius: 14, alignItems: 'center' }}>
-        <Text style={{ color: c.onDark, fontSize: 16, fontWeight: '700' }}>Continue as guest</Text>
+      <Pressable onPress={onStart} style={{ backgroundColor: c.saffron, paddingVertical: 16, borderRadius: 12, alignItems: 'center' }}>
+        <Text style={{ color: c.onDark, fontSize: 16, fontWeight: '700' }}>Get started</Text>
       </Pressable>
       <Text style={{ color: c.inkFaint, fontSize: 12, textAlign: 'center', marginTop: 8 }}>Saved on this device only — no account needed.</Text>
-
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 20 }}>
-        <View style={{ flex: 1, height: 1, backgroundColor: c.line }} />
-        <Text style={{ color: c.inkFaint, fontSize: 12 }}>or</Text>
-        <View style={{ flex: 1, height: 1, backgroundColor: c.line }} />
-      </View>
-
-      <Pressable onPress={onGoogle} style={{ backgroundColor: c.surface, borderWidth: 1, borderColor: c.line, paddingVertical: 16, borderRadius: 14, alignItems: 'center' }}>
-        <Text style={{ color: c.ink, fontSize: 16, fontWeight: '700' }}>Sign in with Google</Text>
-      </Pressable>
-      <Text style={{ color: c.inkFaint, fontSize: 12, textAlign: 'center', marginTop: 8 }}>Account sync — coming soon.</Text>
     </View>
   );
 }
@@ -97,12 +87,12 @@ export function MenuStep({ cuisines, menu, onToggle }: {
           const active = t.slot === slot;
           const picked = menu[t.slot].length;
           return (
-            <Pressable key={t.slot} onPress={() => setSlot(t.slot)} style={{ flex: 1, paddingVertical: 9, borderRadius: 11, alignItems: 'center', backgroundColor: active ? c.green : c.surface, borderWidth: 1, borderColor: active ? 'transparent' : c.line }}>
+            <Pressable key={t.slot} onPress={() => setSlot(t.slot)} style={{ flex: 1, paddingVertical: 9, borderRadius: 11, alignItems: 'center', backgroundColor: active ? c.saffron : c.surface, borderWidth: 1, borderColor: active ? 'transparent' : c.line }}>
               <Text style={{ fontSize: 16 }}>{t.emoji}</Text>
               <Text style={{ color: active ? c.onDark : c.inkSoft, fontSize: 10, fontWeight: '700', marginTop: 2 }}>{t.label}</Text>
               {picked > 0 ? (
                 <View style={{ position: 'absolute', top: 4, right: 6, backgroundColor: active ? c.onDark : c.saffron, borderRadius: 99, minWidth: 15, height: 15, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 3 }}>
-                  <Text style={{ color: active ? c.green : c.onDark, fontSize: 9, fontWeight: '800' }}>{picked}</Text>
+                  <Text style={{ color: active ? c.saffron : c.onDark, fontSize: 9, fontWeight: '800' }}>{picked}</Text>
                 </View>
               ) : null}
             </Pressable>
@@ -166,7 +156,24 @@ export function KitchenStep({ pantry, onToggle }: { pantry: Record<string, boole
   const perishables = KITCHEN.filter((k) => k.category === 'perishable');
   const have = KITCHEN.filter((k) => pantry[k.name]).length;
 
-  const Section = ({ title, hint, items }: { title: string; hint: string; items: typeof KITCHEN }) => (
+  return (
+    <View>
+      <Text style={{ color: c.saffronInk, fontSize: 12.5, fontWeight: '600', marginBottom: 14 }}>✓ {have} items already in your kitchen</Text>
+      <KitchenSection pantry={pantry} onToggle={onToggle} title="Staples" hint="Usually always stocked — leave ticked, untick if you're out." items={staples} />
+      <KitchenSection pantry={pantry} onToggle={onToggle} title="Fresh / perishable" hint="Tick anything you already have at home." items={perishables} />
+    </View>
+  );
+}
+
+function KitchenSection({ title, hint, items, pantry, onToggle }: {
+  title: string;
+  hint: string;
+  items: typeof KITCHEN;
+  pantry: Record<string, boolean>;
+  onToggle: (name: string) => void;
+}) {
+  const c = useColors();
+  return (
     <View style={{ marginBottom: 20 }}>
       <Text style={{ color: c.ink, fontSize: 14.5, fontWeight: '700' }}>{title}</Text>
       <Text style={{ color: c.inkFaint, fontSize: 12, marginTop: 2, marginBottom: 10 }}>{hint}</Text>
@@ -175,14 +182,6 @@ export function KitchenStep({ pantry, onToggle }: { pantry: Record<string, boole
           <SelectPill key={k.name} label={k.name} selected={!!pantry[k.name]} onPress={() => onToggle(k.name)} />
         ))}
       </View>
-    </View>
-  );
-
-  return (
-    <View>
-      <Text style={{ color: c.saffronInk, fontSize: 12.5, fontWeight: '600', marginBottom: 14 }}>✓ {have} items already in your kitchen</Text>
-      <Section title="Staples" hint="Usually always stocked — leave ticked, untick if you're out." items={staples} />
-      <Section title="Fresh / perishable" hint="Tick anything you already have at home." items={perishables} />
     </View>
   );
 }

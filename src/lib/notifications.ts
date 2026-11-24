@@ -12,7 +12,6 @@ export async function scheduleDailyReminder(hour = 8, minute = 0): Promise<boole
     const trigger: unknown = daily ? { type: daily, hour, minute } : { hour, minute, repeats: true };
     await Notifications.scheduleNotificationAsync({
       content: { title: 'Rasoi 🍛', body: "Send today's menu to your cook" },
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       trigger: trigger as any,
     });
     return true;

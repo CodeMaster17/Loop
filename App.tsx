@@ -1,35 +1,61 @@
-import React, { useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StatusBar, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import {
+  Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold, Poppins_800ExtraBold, useFonts,
+} from '@expo-google-fonts/poppins';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StatusBar, View } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ProteinMeter } from './src/components/ui';
-import { prettyDate } from './src/lib/date';
-import { dayProtein } from './src/lib/plan';
+import { PortalProvider, TamaguiProvider } from 'tamagui';
+import tamaguiConfig from './tamagui.config';
+import { type TabDef, TabBar } from './src/components/TabBar';
+import { Text } from './src/components/Text';
+import { getDb } from './src/db/open';
+import { usePhotoFilling } from './src/hooks/usePhotoFilling';
 import { OnboardingFlow } from './src/onboarding/OnboardingFlow';
-import { DiscoverScreen } from './src/screens/DiscoverScreen';
 import { GroceryScreen } from './src/screens/GroceryScreen';
-import { TodayScreen } from './src/screens/TodayScreen';
-import { WeekScreen } from './src/screens/WeekScreen';
+import { MenuCardScreen } from './src/screens/MenuCardScreen';
+import { PlanScreen } from './src/screens/PlanScreen';
 import { SendCtx, SendSheet } from './src/sheets/SendSheet';
 import { SettingsSheet } from './src/sheets/SettingsSheet';
-import { VoiceSheet } from './src/sheets/VoiceSheet';
 import { StoreProvider, useStore } from './src/store';
-import { getColors } from './src/theme';
+import { useColors } from './src/theme';
 import type { Tab } from './src/types';
 
-const TABS: { k: Tab; ic: string; lb: string }[] = [
-  { k: 'today', ic: '🍽️', lb: 'Today' },
-  { k: 'week', ic: '🗓️', lb: 'Week' },
-  { k: 'grocery', ic: '🛒', lb: 'Grocery' },
-  { k: 'discover', ic: '💡', lb: 'Discover' },
+const TABS: TabDef<Tab>[] = [
+  { key: 'plan', label: 'Plan', icon: 'calendar-outline', iconActive: 'calendar' },
+  { key: 'menu', label: 'Menu card', icon: 'book-outline', iconActive: 'book' },
+  { key: 'grocery', label: 'Groceries', icon: 'basket-outline', iconActive: 'basket' },
 ];
 
+/** Space the floating tab bar covers at the bottom of scrolling content. */
+const TAB_CLEARANCE = 110;
+
 export default function App() {
+  usePhotoFilling();
+  const [fontsLoaded] = useFonts({ Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold, Poppins_800ExtraBold });
+
+  // Open, migrate and seed the on-device database early.
+  useEffect(() => {
+    getDb().catch((e: unknown) => console.error('[rasoi] database failed to open', e));
+  }, []);
+
   return (
-    <SafeAreaProvider>
-      <StoreProvider fallback={<Loading />}>
-        <Gate />
-      </StoreProvider>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <TamaguiProvider config={tamaguiConfig} defaultTheme="light">
+          <PortalProvider shouldAddRootHost>
+            <StatusBar barStyle="dark-content" />
+            {fontsLoaded ? (
+              <StoreProvider fallback={<Loading />}>
+                <Gate />
+              </StoreProvider>
+            ) : <Loading />}
+          </PortalProvider>
+        </TamaguiProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
 
@@ -40,104 +66,63 @@ function Gate() {
 }
 
 function Loading() {
-  const c = getColors(useColorScheme());
+  const c = useColors();
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: c.bg }}>
-      <Text style={{ fontSize: 40 }}>🍛</Text>
-      <ActivityIndicator color={c.green} style={{ marginTop: 12 }} />
+      <ActivityIndicator color={c.saffron} />
     </View>
   );
 }
 
 function Root() {
-  const scheme = useColorScheme();
-  const c = getColors(scheme);
+  const c = useColors();
   const insets = useSafeAreaInsets();
-  const { store, shiftDay } = useStore();
+  const { store } = useStore();
 
-  const [tab, setTab] = useState<Tab>('today');
-  const [voiceOpen, setVoiceOpen] = useState(false);
+  const [tab, setTab] = useState<Tab>('plan');
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sendCtx, setSendCtx] = useState<SendCtx | null>(null);
 
   const s = store.settings;
-  const day = store.plan[store.cur];
-  const pd = prettyDate(new Date(store.cur));
+  const bottom = TAB_CLEARANCE + insets.bottom;
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
-      <StatusBar barStyle={scheme === 'dark' ? 'light-content' : 'dark-content'} />
-
       {/* Header */}
-      <View style={{ paddingTop: insets.top + 8, paddingHorizontal: 18, paddingBottom: 12, backgroundColor: c.bg, borderBottomWidth: 1, borderBottomColor: c.line }}>
+      <View style={{ paddingTop: insets.top + 10, paddingHorizontal: 18, paddingBottom: 6 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <View style={{ width: 38, height: 38, borderRadius: 11, backgroundColor: c.green, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ fontSize: 20 }}>🍛</Text>
-            </View>
-            <View style={{ marginLeft: 10 }}>
-              <Text style={{ fontSize: 21, fontWeight: '800', letterSpacing: -0.5, color: c.ink }}>Rasoi</Text>
-              <Text style={{ color: c.inkSoft, fontSize: 12, marginTop: 1 }}>{s.cookName ? `for ${s.cookName}` : 'Aaj kya banega?'}</Text>
-            </View>
+          <View>
+            <Text style={{ fontSize: 24, fontWeight: '700', color: c.ink, letterSpacing: -0.3 }}>Rasoi</Text>
+            <Text style={{ color: c.inkSoft, fontSize: 12.5 }}>{s.cookName ? `Cooking with ${s.cookName}` : 'Aaj kya banega?'}</Text>
           </View>
-          <Pressable onPress={() => setSettingsOpen(true)} hitSlop={8} style={{ width: 40, height: 40, borderRadius: 12, borderWidth: 1, borderColor: c.line, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ fontSize: 18 }}>⚙️</Text>
+          <Pressable
+            onPress={() => setSettingsOpen(true)}
+            hitSlop={8}
+            accessibilityLabel="Settings"
+            style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}
+          >
+            <Ionicons name="settings-outline" size={20} color={c.ink} />
           </Pressable>
         </View>
 
-        {tab === 'today' && day ? (
-          <>
-            <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 14 }}>
-              <Pressable onPress={() => shiftDay(-1)} style={{ width: 34, height: 34, borderRadius: 9, borderWidth: 1, borderColor: c.line, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: c.inkSoft, fontSize: 16 }}>‹</Text>
-              </Pressable>
-              <View style={{ flex: 1, alignItems: 'center' }}>
-                <Text style={{ color: c.ink, fontWeight: '700', fontSize: 15 }}>{pd.rel}</Text>
-                <Text style={{ color: c.inkFaint, fontSize: 11 }}>{pd.sub}</Text>
-              </View>
-              <Pressable onPress={() => shiftDay(1)} style={{ width: 34, height: 34, borderRadius: 9, borderWidth: 1, borderColor: c.line, backgroundColor: c.surface, alignItems: 'center', justifyContent: 'center' }}>
-                <Text style={{ color: c.inkSoft, fontSize: 16 }}>›</Text>
-              </Pressable>
-            </View>
-            <ProteinMeter total={dayProtein(day)} target={s.protein} />
-          </>
-        ) : null}
       </View>
 
       {/* Body */}
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 18, paddingBottom: 150 }}>
-        {tab === 'today' && <TodayScreen onSend={(key) => setSendCtx({ kind: 'day', key })} />}
-        {tab === 'week' && <WeekScreen onSend={(key) => setSendCtx({ kind: 'day', key })} />}
-        {tab === 'grocery' && <GroceryScreen onSendGrocery={() => setSendCtx({ kind: 'grocery' })} />}
-        {tab === 'discover' && <DiscoverScreen />}
-      </ScrollView>
+      {tab === 'menu' ? (
+        <MenuCardScreen bottomInset={bottom} />
+      ) : (
+        <ScrollView key={tab} style={{ flex: 1 }} contentContainerStyle={{ paddingTop: 8, paddingHorizontal: tab === 'plan' ? 0 : 18, paddingBottom: bottom }}>
+          <Animated.View entering={FadeIn.duration(180)}>
+            {tab === 'plan' && <PlanScreen onSend={(key) => setSendCtx({ kind: 'day', key })} />}
+            {tab === 'grocery' && <GroceryScreen onSendGrocery={() => setSendCtx({ kind: 'grocery' })} />}
+          </Animated.View>
+        </ScrollView>
+      )}
 
-      {/* Mic FAB */}
-      <Pressable onPress={() => setVoiceOpen(true)} style={[styles.fab, { right: 24, bottom: insets.bottom + 78, backgroundColor: c.saffron, borderColor: c.bg }]}>
-        <Text style={{ fontSize: 26 }}>🎤</Text>
-      </Pressable>
+      <TabBar tabs={TABS} active={tab} onChange={setTab} />
 
-      {/* Bottom nav */}
-      <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: c.line, paddingTop: 8, paddingHorizontal: 6, paddingBottom: insets.bottom + 8, backgroundColor: c.surface }}>
-        {TABS.map((t) => (
-          <Pressable key={t.k} onPress={() => setTab(t.k)} style={{ flex: 1, alignItems: 'center', paddingVertical: 4 }}>
-            <Text style={{ fontSize: 20, opacity: tab === t.k ? 1 : 0.55 }}>{t.ic}</Text>
-            <Text style={{ fontSize: 10, fontWeight: '600', marginTop: 2, color: tab === t.k ? c.green : c.inkFaint }}>{t.lb}</Text>
-          </Pressable>
-        ))}
-      </View>
-
-      <VoiceSheet open={voiceOpen} onClose={() => setVoiceOpen(false)} />
       <SendSheet ctx={sendCtx} onClose={() => setSendCtx(null)} />
       <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  fab: {
-    position: 'absolute', width: 60, height: 60, borderRadius: 99, borderWidth: 3,
-    alignItems: 'center', justifyContent: 'center', elevation: 6,
-    shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 8, shadowOffset: { width: 0, height: 4 },
-  },
-});

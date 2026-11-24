@@ -1,18 +1,43 @@
 // Meal-planning logic built on the library.
 import { LIB } from '../data';
-import type { DayPlan, Diet, Meal, Slot } from '../types';
+import { DISHES } from '../data/cuisines';
+import { isFishDish } from '../domain/ingredients';
+import { isInRotation } from './rotation';
+import type { DayPlan, Diet, LibMeal, Meal, Slot } from '../types';
 import { addDays, dkey } from './date';
 
 const SLOTS: Slot[] = ['breakfast', 'lunch', 'dinner'];
 
-/** Pick a meal for a slot, honouring diet and avoiding recent dishes. */
+/** Every plannable dish: the built-in library plus the onboarding dishes (snacks aren't planned). */
+const ALL: LibMeal[] = (() => {
+  const seen = new Set<string>();
+  const out: LibMeal[] = [];
+  const add = (m: LibMeal) => {
+    const k = `${m.t}|${m.name.toLowerCase()}`;
+    if (!seen.has(k)) { seen.add(k); out.push(m); }
+  };
+  LIB.forEach(add);
+  DISHES.forEach((d) => {
+    if (d.slot === 'snacks') return;
+    add({ t: d.slot, n: d.name, name: d.name, p: d.p, v: d.veg, i: d.i.slice() });
+  });
+  return out;
+})();
+
+/**
+ * Pick a meal for a slot: never fish, only dishes you ADDED on the Menu card (if none of
+ * those fit this slot, any dish does), honouring diet and avoiding recent dishes.
+ */
 export function pick(type: Slot, diet: Diet, avoid: string[] = []): Meal {
-  const pool = LIB.filter((m) => {
+  const base = ALL.filter((m) => {
     if (m.t !== type) return false;
+    if (isFishDish(m.name, m.i)) return false;
     if (diet === 'veg' && !m.v) return false;
     if (diet === 'nonveg' && m.v && Math.random() > 0.35) return false;
     return true;
   });
+  const added = base.filter((m) => isInRotation(m.name));
+  const pool = added.length ? added : base;
   const fresh = pool.filter((m) => avoid.indexOf(m.name) < 0);
   const use = fresh.length ? fresh : pool;
   const m = use[Math.floor(Math.random() * use.length)] ?? pool[0];
