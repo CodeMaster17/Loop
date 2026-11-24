@@ -1,0 +1,10 @@
+/node_modules
+/.next
+/shared
+/public/sql-wasm.wasm
+/public/icon.svg
+/.data
+.env*.local
+next-env.d.ts
+*.tsbuildinfo
+.vercel
