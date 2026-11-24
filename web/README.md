@@ -46,10 +46,15 @@ VAPID keys and a `CRON_SECRET` in `web/.env.local` (git-ignored).
 
 ## Deploying on Vercel (Hobby, free)
 
-1. Import the GitHub repo in Vercel and set **Root Directory** to `web`. Keep "Include
-   files outside the root directory" on (the build reads `../src` and `../assets`).
-2. Set the production branch to the branch with this code.
-3. Add the environment variables above, then redeploy.
+The Vercel project `rasoi` is connected to this GitHub repo: **every push to the
+production branch deploys automatically**; pushes to other branches get preview URLs.
+
+Project settings (already set): Root Directory `web`, "Include files outside the root
+directory" on (the build reads `../src` and `../assets`), framework Next.js, production
+branch `claude/blissful-bassi-21bb84`.
+
+To deploy by hand from this machine instead, from `web/`:
+`npx vercel build --prod` then `npx vercel deploy --prebuilt --prod`.
 
 The cron in `vercel.json` runs once a day at 02:30 UTC (8:00 in India). On the Hobby plan
 Vercel may run it any time within that hour.
